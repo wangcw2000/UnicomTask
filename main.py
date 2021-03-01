@@ -151,7 +151,7 @@ def openBox_task():
         'clientVersion': '8.0100',
         'isVideo': 'Y'
     }
-      data3 = {
+    data3 = {
         'methodType': 'taskGetReward',
         'taskCenterId': '187',
         'clientVersion': '8.0100',
