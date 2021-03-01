@@ -5,8 +5,8 @@
 
 import requests,json,time,re,login,logging,traceback,os,random,notify
 
-#用户登录全局变量
-client = None
+#用户登录
+client = login.login()
 
 #获取沃之树首页，得到领流量的目标值
 def get_woTree_glowList():
@@ -39,7 +39,6 @@ def woTree_task():
         grow.encoding='utf-8'
         res2 = grow.json()
         logging.info('【沃之树-浇水】: 获得' + str(res2['data']['addedValue']) + '培养值')
-        time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
         logging.error('【沃之树】: 错误，原因为: ' + str(e))
@@ -47,11 +46,11 @@ def woTree_task():
 #经多次测试，都可加倍成功了
 #每日签到，1积分 +4 积分(翻倍)，第七天得到 1G 日包
 #位置: 我的 --> 我的金币
-def daySign_task(username):
+def daySign_task():
     try:
         #参考同类项目 HiCnUnicom 待明日验证是否能加倍成功
         client.headers.update({'referer': 'https://img.client.10010.com/activitys/member/index.html'})
-        param = 'yw_code=&desmobile=' + username + '&version=android@$8.0100'
+        param = 'yw_code=&desmobile=' + os.environ.get('USERNAME_COVER') + '&version=android@$8.0100'
         client.get('https://act.10010.com/SigninApp/signin/querySigninActivity.htm?' + param)
         client.headers.update({'referer': 'https://act.10010.com/SigninApp/signin/querySigninActivity.htm?' + param})
         daySign = client.post('https://act.10010.com/SigninApp/signin/daySign')
@@ -71,7 +70,6 @@ def daySign_task(username):
             logging.info('【每日签到】: ' + '打卡成功,' + res2['data']['statusDesc'])
         elif res1['status'] == '0002':
             logging.info('【每日签到】: ' + res1['msg'])
-        time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
         logging.error('【每日签到】: 错误，原因为: ' + str(e))
@@ -103,7 +101,7 @@ def luckDraw_task():
             time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
-        logging.error('【天天抽奖】: 错误，原因为: ' + str(e))
+        logging.error('【每日签到】: 错误，原因为: ' + str(e))
 
 #游戏任务中心每日打卡领积分，游戏任务自然数递增至7，游戏频道每日1积分
 #位置: 首页 --> 游戏 --> 每日打卡
@@ -137,7 +135,6 @@ def gameCenterSign_Task():
             logging.info('【游戏频道打卡】: 获得' + str(res1['integralNum']) + '积分')
         else:
             logging.info('【游戏频道打卡】: ' + res1['msg'])
-        time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
         logging.error('【游戏中心签到】: 错误，原因为: ' + str(e))
@@ -152,36 +149,31 @@ def openBox_task():
         'methodType': 'reward',
         'deviceType': 'Android',
         'clientVersion': '8.0100',
-        'isVideo': 'N'
-    }
-    param = '?methodType=taskGetReward&taskCenterId=187&clientVersion=8.0100&deviceType=Android'
-    data4 = {
-        'methodType': 'reward',
-        'deviceType': 'Android',
-        'clientVersion': '8.0100',
         'isVideo': 'Y'
+    }
+      data3 = {
+        'methodType': 'taskGetReward',
+        'taskCenterId': '187',
+        'clientVersion': '8.0100',
+        'deviceType': 'Android'
     }
     try:
         #在分类中找到宝箱并开启
         box = client.post('https://m.client.10010.com/mobileService/customer/getShareRedisInfo.htm', data=data1)
         box.encoding='utf-8'
-        time.sleep(1)
         #观看视频领取更多奖励
         watchAd = client.post('https://m.client.10010.com/game_box', data=data2)
         watchAd.encoding='utf-8'
-        #等待随机秒钟
+        #等待1秒钟
         time.sleep(1)
         #完成任务领取100M流量
-        drawReward = client.get('https://m.client.10010.com/producGameTaskCenter' + param)
-        time.sleep(1)
-        watchAd = client.post('https://m.client.10010.com/game_box', data=data4)
+        drawReward = client.post('https://m.client.10010.com/producGameTaskCenter', data=data3)
         drawReward.encoding='utf-8'
         res = drawReward.json()
         if res['code'] == '0000':
             logging.info('【100M寻宝箱】: ' + '获得100M流量')
         else:
             logging.info('【100M寻宝箱】: ' + '任务失败')
-        time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
         logging.error('【100M寻宝箱】: 错误，原因为: ' + str(e))
@@ -233,7 +225,6 @@ def day100Integral_task():
         integral.encoding = 'utf-8'
         res = integral.json()
         logging.info("【100定向积分】: " + res['msg'])
-        time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
         logging.error('【100定向积分】: 错误，原因为: ' + str(e))
@@ -241,7 +232,7 @@ def day100Integral_task():
 #积分抽奖，可在环境变量中设置抽奖次数，否则每天将只会抽奖一次
 #需要注意的是，配置完抽奖次数，程序每运行一次都将触发积分抽奖，直至达每日30次抽奖用完或积分不够(测试过程中未中过奖)
 #位置: 发现 --> 定向积分 --> 小积分，抽好礼
-def pointsLottery_task(n):
+def pointsLottery_task():
     try:
         numjsp = get_encryptmobile()
         #每日首次免费
@@ -249,9 +240,10 @@ def pointsLottery_task(n):
         oneFree.encoding = 'utf-8'
         res1 = oneFree.json()
         logging.info("【积分抽奖】: " + res1['RspMsg'] + ' x免费')
+        num = 0        
         #如果用户未设置此值，将不会自动抽奖
-        #预防用户输入30以上，造成不必要的抽奖操作
-        num = min(30,int(n))
+        if len(os.environ.get('LOTTERY_NUM')) != 0:
+            num = int(os.environ.get('LOTTERY_NUM'))        
         for i in range(num):
             #用积分兑换抽奖机会
             client.get('https://m.client.10010.com/dailylottery/static/integral/duihuan?goldnumber=10&banrate=30&usernumberofjsp=' + numjsp)
@@ -260,7 +252,7 @@ def pointsLottery_task(n):
             payx.encoding = 'utf-8'
             res2 = payx.json()
             logging.info("【积分抽奖】: " + res2['RspMsg'] + ' x' + str(i+1))
-            #等待随机秒钟
+            #等待1秒钟
             time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
@@ -291,51 +283,20 @@ def dongaoPoints_task():
             logging.info('【东奥积分活动】: ' + res1['resdata']['desc'] + '，' + str(point) + '积分')
         else:
             logging.info('【东奥积分活动】: ' + res1['resdata']['desc'] + '，' + res2['resdata']['desc'])
-        time.sleep(1)
     except Exception as e:
         print(traceback.format_exc())
         logging.error('【东奥积分活动】: 错误，原因为: ' + str(e))
 
-#读取用户配置信息
-def readJson():
-    try:
-        #用户配置信息
-        with open('./config.json','r') as fp:
-            users = json.load(fp)
-            return users
-    except Exception as e:
-        print(traceback.format_exc())
-        logging.error('账号信息格式填写错误，原因为: ' + str(e))
-
-#腾讯云函数入口
-def main(event, context):
-    users = readJson()
-    for user in users:
-        global client
-        client = login.login(user['username'],user['password'],user['appId'])
-        if client != False:
-            daySign_task(user['username'])
-            luckDraw_task()
-            if ('lotteryNum' in user):
-                pointsLottery_task(user['lotteryNum'])
-            else:
-                pointsLottery_task(0)
-            day100Integral_task()
-            dongaoPoints_task()
-            woTree_task()
-            gameCenterSign_Task()
-            openBox_task()
-            collectFlow_task()
-        if ('email' in user) :
-            notify.sendEmail(user['email'])
-        if ('dingtalkWebhook' in user) :
-            notify.sendDing(user['dingtalkWebhook'])
-        if ('tgToken' in user) :
-            notify.sendTg(user['tgToken'],user['tgUserId'])
-        #清空上一个用户的日志记录
-        f = open('./log.txt','w')
-        f.truncate()
-
-#主函数入口
 if __name__ == '__main__':
-    main("","")
+    if client != False:
+        daySign_task()
+        luckDraw_task()
+        pointsLottery_task()
+        gameCenterSign_Task()
+        day100Integral_task()
+        dongaoPoints_task()
+        woTree_task()
+        openBox_task()
+        collectFlow_task()
+    if len(os.environ.get('EMAIL_COVER')) != 0:
+        notify.sendEmail() 
